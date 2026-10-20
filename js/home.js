@@ -1,4 +1,5 @@
-(function () {
+(async function () {
+  await AA.init({ reviews: true });
   const grid = document.getElementById('featuredGrid');
   if (grid) {
     const featured = AA.products().filter(p => p.active).slice(0, 3);
@@ -20,7 +21,8 @@
 
   const reviewsGrid = document.getElementById('reviewsGrid');
   if (reviewsGrid) {
-    const reviews = AA.reviews().slice(0, 3);
+    const reviews = AA.reviews().slice(-3).reverse();          // the 3 newest real reviews
+    if (!reviews.length) reviewsGrid.closest('section').style.display = 'none';   // no reviews yet -> hide the block
     reviewsGrid.innerHTML = reviews.map(r => `
       <div class="review-card">
         <div class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>

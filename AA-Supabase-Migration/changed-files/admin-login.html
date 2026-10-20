@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login — AA Leathers</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Montserrat:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav id="navbar">
+  <a href="index.html" class="nav-logo">AA<span> Leathers</span></a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="products.html">Shop</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="cart.html" class="nav-cart">🛍 Cart <span class="cart-badge" data-cart-count>0</span></a>
+    <button class="nav-toggle" id="navToggle"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="auth-wrap" style="padding-top:80px">
+  <div class="auth-card">
+    <div class="auth-logo">AA<span> Leathers</span></div>
+    <div class="auth-tagline">Admin Panel Login</div>
+
+    <div class="auth-section active" style="display:flex">
+      <div class="f-grp"><label class="f-lbl">Admin email</label><input class="f-inp" id="adminUsername" type="email" autocomplete="username" placeholder="admin@yourdomain.com"></div>
+      <div class="f-grp"><label class="f-lbl">Password</label><input class="f-inp" type="password" id="adminPassword" placeholder="••••••••"><div class="password-actions"><button type="button" class="show-password-btn" onclick="togglePassword('adminPassword', this)">Show password</button></div></div>
+      <div class="f-err" id="adminLoginError"></div>
+      <button class="f-btn" onclick="doAdminLogin()">Login</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/admin-auth.js"></script>
+</body>
+</html>

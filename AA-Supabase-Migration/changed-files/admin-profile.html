@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Profile — AA Leathers</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Montserrat:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav id="navbar">
+  <a href="index.html" class="nav-logo">AA<span> Leathers</span></a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="admin.html">Dashboard</a></li>
+    <li><a href="admin-inventory.html">Inventory</a></li>
+    <li><a href="admin-profile.html">Profile</a></li>
+    <li><a href="index.html">View Store</a></li>
+  </ul>
+  <div class="nav-right">
+    <span id="accountLabel" style="font-size:.62rem;letter-spacing:.1em;color:var(--muted)"></span>
+    <button class="nav-btn" onclick="doAdminLogout()">Logout</button>
+    <button class="nav-toggle" id="navToggle"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div style="padding-top:80px">
+  <div class="page-header" style="padding-top:3rem">
+    <div class="sec-label">Admin Panel</div>
+    <h1>My Profile</h1>
+    <p>Update your admin account details.</p>
+  </div>
+
+  <section class="home-section" style="padding-top:1rem;max-width:600px;margin:0 auto">
+    <div class="co-section">
+      <div class="co-sec-lbl">Account Details</div>
+      <div class="f-grp" style="margin-bottom:1rem"><label class="f-lbl">Full Name</label><input class="f-inp" id="apName"></div>
+      <div class="f-grp" style="margin-bottom:1rem"><label class="f-lbl">Email</label><input class="f-inp" id="apEmail"></div>
+      <div class="f-grp" style="margin-bottom:1.5rem"><label class="f-lbl">New Password (leave blank to keep current)</label><input class="f-inp" type="password" id="apPassword" placeholder="••••••••"><div class="password-actions"><button type="button" class="show-password-btn" onclick="togglePassword('apPassword', this)">Show password</button></div></div>
+      <button class="profile-save-btn" onclick="saveAdminProfile()">Save Changes</button>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/admin-auth.js"></script>
+<script>
+(async function () {
+  await AA.init();
+  const admin = await requireAdmin();
+  if (admin) {
+    document.getElementById('apName').value = admin.name;
+    document.getElementById('apEmail').value = admin.email;
+    document.getElementById('apEmail').disabled = true;     // the email is the login; change it in Supabase
+  }
+})();
+async function saveAdminProfile() {
+  const name = document.getElementById('apName').value.trim();
+  if (name.length < 2) { toast('Please enter a name', 'danger'); return; }
+  const result = await AA.updateProfile({ name });
+  if (result.error) { toast(result.error, 'danger'); return; }
+  const pw = document.getElementById('apPassword').value;
+  if (pw) {
+    if (pw.length < 8) { toast('Password must be at least 8 characters', 'danger'); return; }
+    const pwResult = await AA.updateAdminPassword(pw);
+    if (pwResult.error) { toast(pwResult.error, 'danger'); return; }
+    document.getElementById('apPassword').value = '';
+  }
+  toast('Profile updated', 'success');
+}
+</script>
+</body>
+</html>

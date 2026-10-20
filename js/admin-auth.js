@@ -1,32 +1,27 @@
 /* ============================================================
    AA LEATHERS — ADMIN AUTH
-   Single temporary admin account; no admin registration flow.
+   The admin is a normal Supabase Auth user whose profile has
+   role = 'admin' (created once with sql/3-make-admin.sql).
+   There is NO password in this code any more.
    ============================================================ */
 
-function doAdminLogin() {
+async function doAdminLogin() {
   const errEl = document.getElementById('adminLoginError');
-  const username = document.getElementById('adminUsername').value.trim();
+  const email = document.getElementById('adminUsername').value.trim().toLowerCase();
   const password = document.getElementById('adminPassword').value;
-  if (username !== 'admin' || password !== 'admin@123') {
-    errEl.textContent = 'Invalid admin credentials.';
-    return;
-  }
-  const admin = AA.admins()[0] || {
-    adminID: 'ADM-ROOT', name: 'Administrator', email: 'admin', role: 'admin', joined: AA.todayISO()
-  };
-  AA.saveAdmins([admin]);
-  AA.setAdminSession(admin);
+  if (!email || !password) { errEl.textContent = 'Please enter the admin email and password.'; return; }
+  errEl.textContent = '';
+  const { error } = await AA.adminSignIn(email, password);
+  if (error) { errEl.textContent = error; return; }
   toast('Welcome', 'success');
   location.href = 'admin.html';
 }
 
-function requireAdmin() {
-  const admin = AA.adminSession();
-  if (!admin) { location.href = 'admin-login.html'; return null; }
-  return admin;
-}
+// Admin pages call this once data has loaded. (It only controls what is SHOWN;
+// the database itself refuses admin data to anyone who is not the admin.)
+function requireAdmin() { return AA.requireAdmin(); }
 
-function doAdminLogout() {
-  AA.adminLogout();
+async function doAdminLogout() {
+  await AA.signOut();
   location.href = 'admin-login.html';
 }

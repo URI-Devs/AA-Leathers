@@ -84,14 +84,19 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
 <script src="js/data.js"></script>
 <script src="js/ui.js"></script>
 <script>
-function sendContact(){
+async function sendContact(){
   const name = document.getElementById('cName').value.trim();
+  const contact = document.getElementById('cContact').value.trim();
   const msg = document.getElementById('cMessage').value.trim();
   const el = document.getElementById('contactMsg');
-  if(!name || !msg){ el.style.color='var(--danger)'; el.textContent='Please fill in your name and message.'; return; }
+  if(!name || msg.length < 3){ el.style.color='var(--danger)'; el.textContent='Please fill in your name and message.'; return; }
+  const result = await AA.sendContactMessage(name, contact, msg);
+  if (result.error) { el.style.color='var(--danger)'; el.textContent=result.error; return; }
   el.style.color='var(--success)';
   el.textContent='Thanks, '+name.split(' ')[0]+' — we\'ll get back to you soon.';
   document.getElementById('cName').value='';

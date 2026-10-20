@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Account — AA Leathers</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Montserrat:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav id="navbar">
+  <a href="index.html" class="nav-logo">AA<span> Leathers</span></a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="products.html">Shop</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+  <div class="nav-right">
+    <div class="account-menu" id="accountMenu">
+      <button class="nav-user" id="accountToggle"><span id="accountLabel">Account</span> <span class="nav-user-label">▾</span></button>
+      <div class="account-dropdown" id="accountDropdown"></div>
+    </div>
+    <a href="cart.html" class="nav-cart">🛍 Cart <span class="cart-badge" data-cart-count>0</span></a>
+    <button class="nav-toggle" id="navToggle"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div style="padding-top:80px">
+
+  <!-- Guest Order Tracking (always visible) -->
+  <section class="home-section" style="padding-bottom:2rem">
+    <div class="co-section" style="max-width:600px;margin:0 auto">
+      <div class="co-sec-lbl">Track an Order</div>
+      <p class="section-note">Enter your Order ID (e.g. ORD-XXXXX) to check its current status.</p>
+      <div style="display:flex;gap:.6rem">
+        <input class="f-inp" id="trackOrderId" placeholder="ORD-XXXXX">
+        <button class="nav-btn solid" style="white-space:nowrap" onclick="trackOrder()">Track</button>
+      </div>
+      <div id="trackResult" style="margin-top:1rem"></div>
+    </div>
+  </section>
+
+  <!-- Logged-out message -->
+  <div id="loggedOutMsg" class="empty-state" style="display:none">
+    <strong>You're not logged in</strong>
+    <p>Login or create an account to view your profile, order history and wishlist.</p>
+    <a href="login.html" class="btn-gold" style="text-decoration:none;display:inline-block">Login / Sign Up</a>
+  </div>
+
+  <!-- Account area -->
+  <div class="acc-wrap" id="accWrap" style="display:none">
+    <div class="acc-sidebar">
+      <div class="acc-avatar-big" id="accAvatar">?</div>
+      <div class="acc-uname" id="accName">—</div>
+      <div class="acc-email" id="accEmail">—</div>
+      <div class="acc-joined" id="accJoined">—</div>
+      <ul class="acc-nav">
+        <li><a class="active" data-panel="profile" onclick="showAccPanel('profile',this)">Profile Info</a></li>
+        <li><a data-panel="orders" onclick="showAccPanel('orders',this)">My Orders</a></li>
+        <li><a data-panel="wishlist" onclick="showAccPanel('wishlist',this)">Wishlist</a></li>
+        <li><a class="acc-logout" onclick="doLogout()">Logout</a></li>
+      </ul>
+    </div>
+    <div class="acc-main">
+      <div class="acc-panel active" id="panel-profile">
+        <h2 class="acc-sec-title">Profile Information</h2>
+        <div class="profile-grid">
+          <div class="f-grp"><label class="f-lbl">Full Name</label><input class="f-inp" id="pfName"></div>
+          <div class="f-grp"><label class="f-lbl">Phone</label><input class="f-inp" id="pfPhone"></div>
+          <div class="f-grp"><label class="f-lbl">Email</label><input class="f-inp" id="pfEmail" disabled></div>
+          <div class="f-grp"><label class="f-lbl">Delivery Address</label><input class="f-inp" id="pfAddress"></div>
+        </div>
+        <button class="profile-save-btn" onclick="saveProfile()">Save Changes</button>
+      </div>
+
+      <div class="acc-panel" id="panel-orders">
+        <h2 class="acc-sec-title">My Orders</h2>
+        <div id="ordersList"></div>
+      </div>
+
+      <div class="acc-panel" id="panel-wishlist">
+        <h2 class="acc-sec-title">Wishlist</h2>
+        <div class="wish-grid" id="wishlistGrid"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <a href="index.html" class="nav-logo">AA<span> Leathers</span></a>
+      <p>Premium leather wallets, crafted for everyday carry. Based in Sahiwal, Pakistan.</p>
+    </div>
+    <div class="footer-col"><h4>Shop</h4><ul>
+      <li><a href="products.html">All Wallets</a></li>
+      <li><a href="cart.html">Cart</a></li>
+    </ul></div>
+    <div class="footer-col"><h4>Company</h4><ul>
+      <li><a href="about.html">About Us</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul></div>
+    <div class="footer-col"><h4>Account</h4><ul>
+      <li><a href="login.html">Login / Sign Up</a></li>
+    </ul></div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 <span>AA Leathers</span>. All rights reserved.</div>
+    <div class="footer-copy">Cash on Delivery · JazzCash · Easypaisa</div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/account.js"></script>
+</body>
+</html>

@@ -29,7 +29,7 @@
     <div class="auth-tagline">Admin Panel Login</div>
 
     <div class="auth-section active" style="display:flex">
-      <div class="f-grp"><label class="f-lbl">Username</label><input class="f-inp" id="adminUsername" autocomplete="username" placeholder="Username"></div>
+      <div class="f-grp"><label class="f-lbl">Admin email</label><input class="f-inp" id="adminUsername" type="email" autocomplete="username" placeholder="admin@yourdomain.com"></div>
       <div class="f-grp"><label class="f-lbl">Password</label><input class="f-inp" type="password" id="adminPassword" placeholder="••••••••"><div class="password-actions"><button type="button" class="show-password-btn" onclick="togglePassword('adminPassword', this)">Show password</button></div></div>
       <div class="f-err" id="adminLoginError"></div>
       <button class="f-btn" onclick="doAdminLogin()">Login</button>
@@ -37,6 +37,8 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
 <script src="js/data.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/admin-auth.js"></script>

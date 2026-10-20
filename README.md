@@ -5,10 +5,10 @@ file structure of the original `mm-main` project, using the visual design from
 the `index__3_.html` ("LeatherLux") single-page mockup, and wired up to meet the
 functional requirements in the AA Leathers PRD/SDD (FR-01 to FR-20).
 
-No backend/server is used — all data (products, orders, users, admin) is stored
-in the browser's `localStorage`, seeded with sample data on first load. This is
-a front-end prototype suitable for a university FYP demo; a real deployment
-would need a server-side API and database behind the same UI.
+The website uses Supabase for authentication, products, orders, reviews,
+inventory, payment proofs, customer profiles, and admin data. Guest cart and
+wishlist state may remain in browser storage; authenticated customer state is
+synchronized to Supabase.
 
 ## Pages
 
@@ -22,7 +22,6 @@ would need a server-side API and database behind the same UI.
 | `about.html`                | Brand story                                                         |
 | `contact.html`              | Contact form & business info                                        |
 | `admin-login.html`          | Admin login                                                          |
-| `admin-signup.html`         | Admin sign-up (only one admin account is allowed, per PRD)           |
 | `admin.html`                 | Admin dashboard: stats, orders, payment verification, delivery charges, customers |
 | `admin-inventory.html`      | Admin: categories, products, variants, images, stock                |
 | `admin-profile.html`        | Admin's own account settings                                        |
@@ -66,14 +65,14 @@ focused. They'd be reasonable follow-ups if you want them:
 - **3D product viewer / engraving customisation** (from `index__3_.html`) —
   decorative extras not tied to any FR; replaced with the simpler wallet mark
   described above.
-- **Password reset flow** — not specified in the PRD; login/signup only.
+- **Password reset flow** — handled through Supabase Auth and `reset-password.html`.
 
-## Known limitation (prototype only)
+## Remaining setup
 
-Because there's no backend, data lives in each browser's `localStorage`:
-orders placed by a customer are only visible to the admin if they're
-using the **same browser**. A real deployment needs a shared database and
-API behind these same pages.
+Configure the Supabase Auth site URL and redirect URL for
+`reset-password.html`, and configure an email provider if password-reset
+emails are not delivered by the default project settings. Guest cart and
+wishlist data are intentionally retained locally until the customer signs in.
 
 ## Local preview
 

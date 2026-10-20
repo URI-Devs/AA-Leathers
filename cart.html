@@ -86,14 +86,25 @@
               <div><div class="pay-name">Easypaisa</div><div class="pay-sub">Manual transfer, verified by our team</div></div>
             </div>
 
-            <div id="manualPayBox" style="display:none;margin-top:1.5rem;border-top:1px solid rgba(201,168,76,0.12);padding-top:1.5rem">
-              <p class="section-note">Send the total amount to the account below, then upload a screenshot as proof. Your order will show as <strong>Pending</strong> until our admin verifies the payment.</p>
-              <p class="section-note">Account Title: <strong>AA Leathers</strong> &nbsp;|&nbsp; Account Number: <strong id="payAccountNumber">03xx-xxxxxxx</strong></p>
+            <div id="manualPayBox" class="manual-payment-card" style="display:none">
+              <div class="manual-payment-heading">
+                <div><div class="co-sec-lbl">Manual payment details</div><h3 id="payMethodTitle">JazzCash</h3></div>
+                <span class="status-pill status-pending">Payment remains pending</span>
+              </div>
+              <p class="section-note">Send the exact payable amount below. Upload the successful transaction screenshot after completing the transfer. An admin must verify it before the payment is marked verified.</p>
+              <div class="manual-payment-details">
+                <div><span>Amount to send</span><strong id="payTotal">Rs. 0</strong></div>
+                <div><span>Account title</span><strong id="payAccountTitle">AA Leathers</strong></div>
+                <div><span>Account number</span><strong id="payAccountNumber"></strong></div>
+              </div>
+              <p class="section-note" id="paymentInstructions">Complete the transfer, then choose the screenshot of the successful transaction below.</p>
               <div class="f-grp">
                 <label class="f-lbl">Upload Payment Screenshot</label>
                 <input class="f-inp" type="file" id="paymentProof" accept="image/*">
                 <div class="f-hint" id="proofFileName"></div>
+                <img id="paymentProofPreview" class="payment-proof-preview" alt="Selected payment screenshot preview" hidden>
               </div>
+              <button type="button" class="co-back-lnk" onclick="backToPaymentMethods()">← Back to Payment Methods (choose COD)</button>
             </div>
           </div>
           <button class="co-back-lnk" onclick="goToStep(1)">← Back</button>
@@ -164,6 +175,8 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
 <script src="js/data.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/cart.js"></script>

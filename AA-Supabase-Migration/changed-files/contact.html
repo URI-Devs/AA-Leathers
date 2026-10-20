@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact Us — AA Leathers</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Montserrat:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav id="navbar">
+  <a href="index.html" class="nav-logo">AA<span> Leathers</span></a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="products.html">Shop</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+  <div class="nav-right">
+    <div class="account-menu" id="accountMenu">
+      <button class="nav-user" id="accountToggle"><span id="accountLabel">Account</span> <span class="nav-user-label">▾</span></button>
+      <div class="account-dropdown" id="accountDropdown">
+        <a href="login.html">Login / Sign Up</a>
+        <a href="user-profile.html">My Account</a>
+      </div>
+    </div>
+    <a href="cart.html" class="nav-cart">🛍 Cart <span class="cart-badge" data-cart-count>0</span></a>
+    <button class="nav-toggle" id="navToggle"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div style="padding-top:80px">
+  <div class="page-header">
+    <div class="sec-label">Get In Touch</div>
+    <h1>Contact Us</h1>
+    <p>Questions about an order or a product? Send us a message.</p>
+  </div>
+
+  <section class="home-section" style="padding-top:2rem">
+    <div class="about-grid">
+      <div class="co-section">
+        <div class="co-sec-lbl">Send a Message</div>
+        <div class="f-grp" style="margin-bottom:1rem"><label class="f-lbl">Name</label><input class="f-inp" id="cName" placeholder="Your name"></div>
+        <div class="f-grp" style="margin-bottom:1rem"><label class="f-lbl">Email or Phone</label><input class="f-inp" id="cContact" placeholder="you@email.com or 03xx-xxxxxxx"></div>
+        <div class="f-grp" style="margin-bottom:1rem"><label class="f-lbl">Message</label><textarea class="f-inp" id="cMessage" placeholder="How can we help?"></textarea></div>
+        <div class="f-err" id="contactMsg"></div>
+        <button class="f-btn" onclick="sendContact()">Send Message</button>
+      </div>
+      <div class="about-body">
+        <div class="sec-label">Reach Us Directly</div>
+        <h2 class="sec-title">We're happy <em>to help</em></h2>
+        <p><strong style="color:var(--cream)">Phone / WhatsApp:</strong> 0300-1234567</p>
+        <p><strong style="color:var(--cream)">Email:</strong> support@aaleathers.pk</p>
+        <p><strong style="color:var(--cream)">Address:</strong> Sahiwal, Punjab, Pakistan</p>
+        <p><strong style="color:var(--cream)">Hours:</strong> Mon–Sat, 10am – 8pm</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <a href="index.html" class="nav-logo">AA<span> Leathers</span></a>
+      <p>Premium leather wallets, crafted for everyday carry. Based in Sahiwal, Pakistan.</p>
+    </div>
+    <div class="footer-col"><h4>Shop</h4><ul>
+      <li><a href="products.html">All Wallets</a></li>
+      <li><a href="cart.html">Cart</a></li>
+    </ul></div>
+    <div class="footer-col"><h4>Company</h4><ul>
+      <li><a href="about.html">About Us</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul></div>
+    <div class="footer-col"><h4>Account</h4><ul>
+      <li><a href="login.html">Login / Sign Up</a></li>
+      <li><a href="user-profile.html">Track Order</a></li>
+    </ul></div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 <span>AA Leathers</span>. All rights reserved.</div>
+    <div class="footer-copy">Cash on Delivery · JazzCash · Easypaisa</div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/ui.js"></script>
+<script>
+async function sendContact(){
+  const name = document.getElementById('cName').value.trim();
+  const contact = document.getElementById('cContact').value.trim();
+  const msg = document.getElementById('cMessage').value.trim();
+  const el = document.getElementById('contactMsg');
+  if(!name || msg.length < 3){ el.style.color='var(--danger)'; el.textContent='Please fill in your name and message.'; return; }
+  const result = await AA.sendContactMessage(name, contact, msg);
+  if (result.error) { el.style.color='var(--danger)'; el.textContent=result.error; return; }
+  el.style.color='var(--success)';
+  el.textContent='Thanks, '+name.split(' ')[0]+' — we\'ll get back to you soon.';
+  document.getElementById('cName').value='';
+  document.getElementById('cContact').value='';
+  document.getElementById('cMessage').value='';
+}
+</script>
+</body>
+</html>

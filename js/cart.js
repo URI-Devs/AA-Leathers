@@ -5,7 +5,11 @@
    FR-14 Order Placement, FR-17 Delivery Charges
    ============================================================ */
 
-let checkoutState = { region: '', method: '', proofDataUrl: '', proofFileName: '' };
+let checkoutState = { region: '', method: '', proofFile: null, proofFileName: '' };
+const manualPaymentAccounts = {
+  JazzCash: { title: 'AA Leathers', number: '0300-1234567' },
+  Easypaisa: { title: 'AA Leathers', number: '0300-7654321' },
+};
 
 function renderCart() {
   const cart = AA.cart();
@@ -114,22 +118,51 @@ function selectPayment(method) {
   const box = document.getElementById('manualPayBox');
   if (method === 'JazzCash' || method === 'Easypaisa') {
     box.style.display = 'block';
-    document.getElementById('payAccountNumber').textContent = method === 'JazzCash' ? '0300-1234567' : '0300-7654321';
+    const account = manualPaymentAccounts[method];
+    document.getElementById('payMethodTitle').textContent = method;
+    document.getElementById('payAccountTitle').textContent = account.title;
+    document.getElementById('payAccountNumber').textContent = account.number;
+    document.getElementById('paymentInstructions').textContent =
+      'Complete the transfer to this ' + method + ' account, then upload the screenshot of the successful transaction below.';
+    renderCoSidebar();
   } else {
     box.style.display = 'none';
   }
 }
 
+function backToPaymentMethods() {
+  checkoutState.proofFile = null;
+  checkoutState.proofFileName = '';
+  const input = document.getElementById('paymentProof');
+  if (input) input.value = '';
+  const preview = document.getElementById('paymentProofPreview');
+  if (preview) { preview.hidden = true; preview.removeAttribute('src'); }
+  document.getElementById('proofFileName').textContent = '';
+  selectPayment('');
+}
+
 document.getElementById('paymentProof').addEventListener('change', function () {
   const file = this.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    checkoutState.proofDataUrl = e.target.result;
-    checkoutState.proofFileName = file.name;
-    document.getElementById('proofFileName').textContent = 'Selected: ' + file.name;
-  };
-  reader.readAsDataURL(file);
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!allowedTypes.includes(file.type)) {
+    toast('Please choose a JPG, PNG, or WebP screenshot file', 'danger');
+    this.value = '';
+    return;
+  }
+  if (file.size > 3 * 1024 * 1024) {
+    toast('Your payment screenshot must be smaller than 3 MB', 'danger');
+    this.value = '';
+    return;
+  }
+  checkoutState.proofFile = file;                 // uploaded to Supabase Storage when the order is placed
+  checkoutState.proofFileName = file.name;
+  document.getElementById('proofFileName').textContent = 'Selected: ' + file.name;
+  const preview = document.getElementById('paymentProofPreview');
+  if (preview) {
+    preview.src = URL.createObjectURL(file);
+    preview.hidden = false;
+  }
 });
 
 function renderCoSidebar() {
@@ -142,6 +175,8 @@ function renderCoSidebar() {
   document.getElementById('coSubtotal').textContent = AA.money(subtotal);
   document.getElementById('coDelivery').textContent = AA.money(delivery);
   document.getElementById('coTotal').textContent = AA.money(subtotal + delivery);
+  const payTotal = document.getElementById('payTotal');
+  if (payTotal) payTotal.textContent = AA.money(subtotal + delivery);
 }
 
 function renderReview() {
@@ -161,58 +196,46 @@ function renderReview() {
   `;
 }
 
-function placeOrder() {
+let placingOrder = false;
+async function placeOrder() {
+  if (placingOrder) return;                       // stop double-clicks creating two orders
   const name = document.getElementById('custName').value.trim();
   const phone = document.getElementById('custPhone').value.trim();
   const address = document.getElementById('custAddress').value.trim();
   if (!name || !phone || !address) { toast('Please fill in your delivery details', 'danger'); goToStep(1); return; }
   if (!checkoutState.method) { toast('Please select a payment method', 'danger'); goToStep(2); return; }
-  if ((checkoutState.method === 'JazzCash' || checkoutState.method === 'Easypaisa') && !checkoutState.proofDataUrl) {
+  if ((checkoutState.method === 'JazzCash' || checkoutState.method === 'Easypaisa') && !checkoutState.proofFile) {
     toast('Please upload your payment screenshot', 'danger'); goToStep(2); return;
   }
 
-  const cart = AA.cart();
-  const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
-  const delivery = AA.deliveryChargeFor(checkoutState.region);
-  const user = AA.session();
+  placingOrder = true;
+  const btn = document.querySelector('.co-place-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Placing order…'; }
 
-  const order = {
-    orderID: AA.uid('ORD').toUpperCase(),
-    customerName: name, customerEmail: user ? (user.email || '') : '', customerPhone: phone,
-    deliveryAddress: address, region: checkoutState.region,
-    userID: user ? user.userID : null,
-    items: cart.map(i => ({ productID: i.productID, variantID: i.variantID, name: i.name, color: i.color, size: i.size, price: i.price, quantity: i.quantity })),
-    subtotal, deliveryCharge: delivery, totalAmount: subtotal + delivery,
-    paymentMethod: checkoutState.method,
-    paymentStatus: checkoutState.method === 'COD' ? 'N/A' : 'Awaiting Verification',
-    paymentProof: checkoutState.proofDataUrl || null,
-    status: checkoutState.method === 'COD' ? 'Confirmed' : 'Pending',
-    orderDate: AA.todayISO(),
-  };
-
-  // Reduce stock
-  const products = AA.products();
-  order.items.forEach(oi => {
-    const p = products.find(p => p.productID === oi.productID);
-    if (p) {
-      const v = p.variants.find(v => v.variantID === oi.variantID);
-      if (v) v.stock = Math.max(0, v.stock - oi.quantity);
-    }
+  // The server re-checks prices, delivery charge and stock — we only send what the customer chose.
+  const result = await AA.placeOrder({
+    name, phone, address, region: checkoutState.region,
+    method: checkoutState.method, proofFile: checkoutState.proofFile,
   });
-  AA.saveProducts(products);
 
-  const orders = AA.orders();
-  orders.push(order);
-  AA.saveOrders(orders);
+  placingOrder = false;
+  if (btn) { btn.disabled = false; btn.textContent = 'Place Order'; }
+  if (result.error) { toast(result.error, 'danger'); return; }
+
+  const isCOD = checkoutState.method === 'COD';
   AA.saveCart([]);
-
   document.getElementById('checkoutView').style.display = 'none';
   document.getElementById('confirmView').style.display = 'block';
-  document.getElementById('confirmOrderId').textContent = 'Order ID: ' + order.orderID;
-  document.getElementById('confirmMsg').textContent = order.status === 'Confirmed'
-    ? 'Thank you! Your Cash on Delivery order is confirmed and will be prepared for delivery.'
-    : 'Thank you! We\'ll verify your payment shortly. You can check your order status anytime using your Order ID.';
+  document.getElementById('confirmOrderId').textContent = 'Order ID: ' + result.orderID;
+  document.getElementById('confirmMsg').textContent = isCOD
+    ? 'Thank you! Your Cash on Delivery order is confirmed and will be prepared for delivery. Save your Order ID to track it.'
+    : 'Thank you! We\'ll verify your payment shortly. Save your Order ID — you can check your order status anytime with it.';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-renderCart();
+// Load the live catalog first, fix any out-of-date items in the saved cart, then draw the cart.
+AA.init().then(() => {
+  const notes = AA.refreshCart();
+  notes.forEach(n => toast(n));
+  renderCart();
+});

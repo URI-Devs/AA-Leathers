@@ -24,7 +24,7 @@
   const accToggle = document.getElementById('accountToggle');
   const accDropdown = document.getElementById('accountDropdown');
   if (accToggle && accDropdown) {
-    renderAccountMenu(accToggle, accDropdown);
+    AA.sessionReady.then(() => renderAccountMenu(accToggle, accDropdown));   // wait until we know who is logged in
     accToggle.addEventListener('click', (e) => {
       e.stopPropagation();
       accDropdown.classList.toggle('open');
@@ -61,10 +61,9 @@ function renderAccountMenu(toggle, dropdown) {
     ? '<a href="user-profile.html">My Account</a><a href="#" data-customer-logout>Logout</a>'
     : '<a href="login.html">Login</a><a href="login.html#register">Create Account</a>';
   const logout = dropdown.querySelector('[data-customer-logout], [data-admin-logout]');
-  if (logout) logout.addEventListener('click', (event) => {
+  if (logout) logout.addEventListener('click', async (event) => {
     event.preventDefault();
-    if (logout.hasAttribute('data-admin-logout')) AA.adminLogout();
-    else AA.logout();
+    await AA.signOut();
     renderAccountMenu(toggle, dropdown);
     dropdown.classList.remove('open');
     if (typeof renderAccount === 'function') renderAccount();
@@ -99,7 +98,8 @@ function toast(msg, type) {
   }
   const el = document.createElement('div');
   el.className = 'toast' + (type ? ' toast-' + type : '');
-  el.innerHTML = '<span class="toast-icon">' + (type === 'success' ? '✓' : type === 'danger' ? '✕' : '✦') + '</span><span>' + msg + '</span>';
+  el.innerHTML = '<span class="toast-icon">' + (type === 'success' ? '✓' : type === 'danger' ? '✕' : '✦') + '</span><span></span>';
+  el.lastChild.textContent = msg;   // textContent, not innerHTML: messages may contain product names or server text
   container.appendChild(el);
   requestAnimationFrame(() => el.classList.add('show'));
   setTimeout(() => {
@@ -114,6 +114,45 @@ function togglePassword(inputId, button) {
   const showing = input.type === 'text';
   input.type = showing ? 'password' : 'text';
   button.textContent = showing ? 'Show password' : 'Hide password';
+}
+
+function themedConfirm(message, title) {
+  return new Promise(resolve => {
+    let modal = document.getElementById('themeConfirmModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'themeConfirmModal';
+      modal.className = 'theme-confirm-modal';
+      modal.innerHTML = `
+        <div class="theme-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="themeConfirmTitle">
+          <button type="button" class="theme-confirm-close" aria-label="Close confirmation">×</button>
+          <div class="sec-label">Admin action</div>
+          <h2 id="themeConfirmTitle"></h2>
+          <p class="theme-confirm-message"></p>
+          <div class="theme-confirm-actions">
+            <button type="button" class="theme-confirm-cancel">Cancel</button>
+            <button type="button" class="theme-confirm-delete">Delete</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+    }
+
+    modal.querySelector('#themeConfirmTitle').textContent = title || 'Delete product';
+    modal.querySelector('.theme-confirm-message').textContent = message;
+    modal.hidden = false;
+
+    const finish = result => {
+      modal.hidden = true;
+      modal.querySelector('.theme-confirm-cancel').onclick = null;
+      modal.querySelector('.theme-confirm-delete').onclick = null;
+      modal.querySelector('.theme-confirm-close').onclick = null;
+      resolve(result);
+    };
+    modal.querySelector('.theme-confirm-cancel').onclick = () => finish(false);
+    modal.querySelector('.theme-confirm-close').onclick = () => finish(false);
+    modal.querySelector('.theme-confirm-delete').onclick = () => finish(true);
+    modal.querySelector('.theme-confirm-delete').focus();
+  });
 }
 
 /* ---------- Small helpers shared by pages ---------- */

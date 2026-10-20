@@ -4,7 +4,7 @@
    FR-17 Delivery Charges
    ============================================================ */
 
-requireAdmin();
+// (admin check + data loading happen in the boot block at the bottom of this file)
 
 const STATUS_OPTIONS = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 const statusClass2 = {
@@ -173,25 +173,25 @@ function closeOrderDetails() {
   }
 }
 
-function saveOrderDetailsStatus(orderID) {
+async function saveOrderDetailsStatus(orderID) {
   const select = document.getElementById('detail-status-' + orderID);
-  const orders = AA.orders();
-  const order = orders.find(o => o.orderID === orderID);
-  if (!order || !select) return;
-  order.status = select.value;
-  AA.saveOrders(orders);
+  if (!select) return;
+  const result = await AA.updateOrderStatus(orderID, select.value);
+  if (result.error) { toast(result.error, 'danger'); return; }
   renderOrdersTable();
   renderStats();
   openOrderDetails(orderID);
   toast('Order status updated', 'success');
 }
 
-function viewPaymentProof(orderID) {
+async function viewPaymentProof(orderID) {
   const order = AA.orders().find(o => o.orderID === orderID);
   if (!order || !order.paymentProof) {
     toast('Payment screenshot unavailable.', 'danger');
     return;
   }
+  // Screenshots are private: ask Supabase for a link that works for 2 minutes (admin only).
+  const url = await AA.paymentProofUrl(order.paymentProof);
   let modal = document.getElementById('paymentProofModal');
   if (!modal) {
     modal = document.createElement('div');
@@ -208,7 +208,7 @@ function viewPaymentProof(orderID) {
   error.style.display = 'none';
   image.onload = () => { image.style.display = 'block'; error.style.display = 'none'; };
   image.onerror = () => { image.style.display = 'none'; error.style.display = 'block'; };
-  image.src = order.paymentProof;
+  if (url) image.src = url; else image.onerror();
   modal.classList.add('open');
 }
 
@@ -217,30 +217,17 @@ function closePaymentProof() {
   if (modal) modal.classList.remove('open');
 }
 
-function verifyPayment(orderID, approve) {
-  const orders = AA.orders();
-  const order = orders.find(o => o.orderID === orderID);
-  if (!order) return;
-  if (approve) {
-    order.paymentStatus = 'Verified';
-    order.status = 'Confirmed';
-    toast('Payment approved — order confirmed', 'success');
-  } else {
-    order.paymentStatus = 'Rejected';
-    order.status = 'Cancelled';
-    toast('Payment rejected — order cancelled', 'danger');
-  }
-  AA.saveOrders(orders);
+async function verifyPayment(orderID, approve) {
+  const result = await AA.verifyPayment(orderID, approve);
+  if (result.error) { toast(result.error, 'danger'); return; }
+  toast(approve ? 'Payment approved — order confirmed' : 'Payment rejected — order cancelled', approve ? 'success' : 'danger');
   renderOrdersTable();
   renderStats();
 }
 
-function updateOrderStatus(orderID) {
-  const orders = AA.orders();
-  const order = orders.find(o => o.orderID === orderID);
-  if (!order) return;
-  order.status = document.getElementById('status-' + orderID).value;
-  AA.saveOrders(orders);
+async function updateOrderStatus(orderID) {
+  const result = await AA.updateOrderStatus(orderID, document.getElementById('status-' + orderID).value);
+  if (result.error) { toast(result.error, 'danger'); renderOrdersTable(); return; }
   toast('Order status updated', 'success');
   renderOrdersTable();
   renderStats();
@@ -256,23 +243,23 @@ function renderDelivery() {
   `).join('') + `<div class="form-group" style="align-self:end"><button class="admin-form-btn" onclick="saveDeliveryCharges()">Save Charges</button></div>`;
 }
 
-function saveDeliveryCharges() {
-  const list = AA.deliveryCharges();
-  list.forEach(d => {
-    const val = document.getElementById('dc-' + d.chargeID).value;
-    d.amount = Number(val) || 0;
-  });
-  AA.saveDeliveryCharges(list);
+async function saveDeliveryCharges() {
+  const list = AA.deliveryCharges().map(d => ({
+    chargeID: d.chargeID,
+    amount: Math.max(0, Number(document.getElementById('dc-' + d.chargeID).value) || 0),
+  }));
+  const result = await AA.saveDeliveryCharges(list);
+  if (result.error) { toast(result.error, 'danger'); return; }
+  renderDelivery();
   toast('Delivery charges updated', 'success');
 }
 
-function addDeliveryRegion() {
+async function addDeliveryRegion() {
   const name = document.getElementById('newRegionName').value.trim();
   const amount = Number(document.getElementById('newRegionCharge').value) || 0;
   if (!name) { toast('Enter a region name', 'danger'); return; }
-  const list = AA.deliveryCharges();
-  list.push({ chargeID: AA.uid('dc'), region: name, amount });
-  AA.saveDeliveryCharges(list);
+  const result = await AA.addDeliveryRegion(name, amount);
+  if (result.error) { toast(result.error, 'danger'); return; }
   document.getElementById('newRegionName').value = '';
   document.getElementById('newRegionCharge').value = '';
   renderDelivery();
@@ -316,18 +303,22 @@ function renderReviews() {
   }).join('');
 }
 
-function deleteReview(reviewID) {
-  const reviews = AA.reviews();
-  const review = reviews.find(item => item.reviewID === reviewID);
-  if (!review) return;
+async function deleteReview(reviewID) {
+  if (!AA.reviews().find(item => item.reviewID === reviewID)) return;
   if (!window.confirm('Delete this review?')) return;
-  AA.saveReviews(reviews.filter(item => item.reviewID !== reviewID));
+  const result = await AA.deleteReview(reviewID);
+  if (result.error) { toast(result.error, 'danger'); return; }
   renderReviews();
   toast('Review deleted', 'success');
 }
 
-renderStats();
-renderOrdersTable();
-renderDelivery();
-renderCustomers();
-renderReviews();
+// BOOT: load everything the dashboard needs, make sure this is really the admin, then draw.
+(async function bootAdminDashboard() {
+  await AA.init({ orders: true, customers: true, reviews: true });
+  if (!(await AA.requireAdmin())) return;      // not the admin -> sent to admin-login.html
+  renderStats();
+  renderOrdersTable();
+  renderDelivery();
+  renderCustomers();
+  renderReviews();
+})();

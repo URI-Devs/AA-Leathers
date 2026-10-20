@@ -4,8 +4,6 @@
    FR-06 Variants, FR-16 Inventory/Stock, FR-20 Multiple Images
    ============================================================ */
 
-requireAdmin();
-
 let formVariants = [];
 let formImages = [];
 
@@ -22,21 +20,21 @@ function renderCategoryChips() {
   sel.innerHTML = cats.map(c => `<option value="${c.categoryID}">${esc(c.name)}</option>`).join('');
 }
 
-function addCategory() {
+async function addCategory() {
   const name = document.getElementById('newCategoryName').value.trim();
   if (!name) { toast('Enter a category name', 'danger'); return; }
-  const cats = AA.categories();
-  cats.push({ categoryID: AA.uid('cat'), name });
-  AA.saveCategories(cats);
+  const result = await AA.saveCategory(name);
+  if (result.error) { toast(result.error, 'danger'); return; }
   document.getElementById('newCategoryName').value = '';
   renderCategoryChips();
   toast('Category added', 'success');
 }
 
-function deleteCategory(id) {
+async function deleteCategory(id) {
   const inUse = AA.products().some(p => p.categoryID === id);
   if (inUse) { toast('Cannot delete — products are using this category', 'danger'); return; }
-  AA.saveCategories(AA.categories().filter(c => c.categoryID !== id));
+  const result = await AA.deleteCategory(id);
+  if (result.error) { toast(result.error, 'danger'); return; }
   renderCategoryChips();
 }
 
@@ -65,7 +63,7 @@ async function uploadVariantImage(event) {
   const file = input.files[0];
   if (!file || !formVariants[idx]) return;
   try {
-    formVariants[idx].image = await AA.compressImage(file, 500, 0.72);
+    formVariants[idx].image = await AA.compressProductImage(file, 1200, 0.82);
     renderVariantsTable();
   } catch (e) {
     toast('Could not read that image', 'danger');
@@ -95,7 +93,7 @@ document.getElementById('productImages').addEventListener('change', async functi
   const files = Array.from(this.files);
   for (const file of files) {
     try {
-      const dataUrl = await AA.compressImage(file, 500, 0.72);
+      const dataUrl = await AA.compressProductImage(file, 1200, 0.82);
       formImages.push(dataUrl);
     } catch (e) { /* skip unreadable file */ }
   }
@@ -133,7 +131,9 @@ function resetProductForm() {
   renderImagePreviews();
 }
 
-function saveProduct() {
+let savingProduct = false;
+async function saveProduct() {
+  if (savingProduct) return;
   const id = document.getElementById('productId').value;
   const name = document.getElementById('productName').value.trim();
   const articleNo = document.getElementById('productArticle').value.trim();
@@ -145,19 +145,16 @@ function saveProduct() {
   if (!name || !articleNo || !categoryID || !price) { toast('Please fill in name, article number, category and price', 'danger'); return; }
   if (!formVariants.length) { toast('Add at least one variant (color/size/stock)', 'danger'); return; }
 
-  const products = AA.products();
-  if (id) {
-    const p = products.find(p => p.productID === id);
-    if (p) Object.assign(p, { name, articleNo, categoryID, price, active, description, variants: formVariants, images: formImages });
-    toast('Product updated', 'success');
-  } else {
-    products.push({
-      productID: articleNo || AA.uid('AA'), name, articleNo, categoryID, price, active,
-      description, variants: formVariants, images: formImages,
-    });
-    toast('Product added', 'success');
-  }
-  AA.saveProducts(products);
+  savingProduct = true;
+  toast('Saving… uploading photos can take a few seconds');
+  // New photos are still in-memory "data:" images; AA.saveProduct uploads them to Storage first.
+  const result = await AA.saveProduct({
+    productID: id || articleNo, name, articleNo, categoryID, price, active,
+    description, variants: formVariants, images: formImages,
+  }, !id);
+  savingProduct = false;
+  if (result.error) { toast(result.error, 'danger'); return; }
+  toast(id ? 'Product updated' : 'Product added', 'success');
   resetProductForm();
   renderInventoryTable();
 }
@@ -180,18 +177,22 @@ function editProduct(id) {
   window.scrollTo({ top: 300, behavior: 'smooth' });
 }
 
-function toggleActive(id) {
-  const products = AA.products();
-  const p = products.find(p => p.productID === id);
+async function toggleActive(id) {
+  const p = AA.productById(id);
   if (!p) return;
-  p.active = !p.active;
-  AA.saveProducts(products);
+  const result = await AA.setProductActive(id, !p.active);
+  if (result.error) { toast(result.error, 'danger'); return; }
   renderInventoryTable();
 }
 
-function deleteProduct(id) {
-  if (!confirm('Delete this product permanently?')) return;
-  AA.saveProducts(AA.products().filter(p => p.productID !== id));
+async function deleteProduct(id) {
+  const confirmed = await themedConfirm(
+    'This permanently removes the product and its associated product images. This action cannot be undone.',
+    'Delete this product?'
+  );
+  if (!confirmed) return;
+  const result = await AA.deleteProduct(id);
+  if (result.error) { toast(result.error, 'danger'); return; }
   renderInventoryTable();
   toast('Product deleted');
 }
@@ -222,7 +223,12 @@ function renderInventoryTable() {
   }).join('');
 }
 
-renderCategoryChips();
-renderVariantsTable();
-renderImagePreviews();
-renderInventoryTable();
+// BOOT: load data, make sure this is really the admin, then draw the page.
+(async function bootInventory() {
+  await AA.init();
+  if (!(await AA.requireAdmin())) return;
+  renderCategoryChips();
+  renderVariantsTable();
+  renderImagePreviews();
+  renderInventoryTable();
+})();

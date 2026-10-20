@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Account — AA Leathers</title>
+<script>document.documentElement.dataset.accountTheme=localStorage.getItem('aa_account_theme')||'dark';</script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Montserrat:wght@200;300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -29,19 +30,6 @@
 
 <div style="padding-top:80px">
 
-  <!-- Guest Order Tracking (always visible) -->
-  <section class="home-section" style="padding-bottom:2rem">
-    <div class="co-section" style="max-width:600px;margin:0 auto">
-      <div class="co-sec-lbl">Track an Order</div>
-      <p class="section-note">Enter your Order ID (e.g. ORD-XXXXX) to check its current status.</p>
-      <div style="display:flex;gap:.6rem">
-        <input class="f-inp" id="trackOrderId" placeholder="ORD-XXXXX">
-        <button class="nav-btn solid" style="white-space:nowrap" onclick="trackOrder()">Track</button>
-      </div>
-      <div id="trackResult" style="margin-top:1rem"></div>
-    </div>
-  </section>
-
   <!-- Logged-out message -->
   <div id="loggedOutMsg" class="empty-state" style="display:none">
     <strong>You're not logged in</strong>
@@ -50,29 +38,52 @@
   </div>
 
   <!-- Account area -->
-  <div class="acc-wrap" id="accWrap" style="display:none">
+  <div class="acc-wrap acc-dashboard" id="accWrap" style="display:none">
     <div class="acc-sidebar">
+      <div class="acc-brand">AA<span> Leathers</span><small>MY ACCOUNT</small></div>
       <div class="acc-avatar-big" id="accAvatar">?</div>
       <div class="acc-uname" id="accName">—</div>
       <div class="acc-email" id="accEmail">—</div>
       <div class="acc-joined" id="accJoined">—</div>
       <ul class="acc-nav">
-        <li><a class="active" data-panel="profile" onclick="showAccPanel('profile',this)">Profile Info</a></li>
+        <li><a class="active" data-panel="overview" onclick="showAccPanel('overview',this)">Overview</a></li>
         <li><a data-panel="orders" onclick="showAccPanel('orders',this)">My Orders</a></li>
+        <li><a data-panel="profile" onclick="showAccPanel('profile',this)">Personal Information</a></li>
+        <li><a data-panel="address" onclick="showAccPanel('address',this)">Delivery Address</a></li>
         <li><a data-panel="wishlist" onclick="showAccPanel('wishlist',this)">Wishlist</a></li>
+        <li><a data-panel="reviews" onclick="showAccPanel('reviews',this)">My Reviews</a></li>
+        <li><a data-panel="security" onclick="showAccPanel('security',this)">Login & Security</a></li>
+        <li><a data-panel="preferences" onclick="showAccPanel('preferences',this)">Preferences</a></li>
+        <li><a data-panel="help" onclick="showAccPanel('help',this)">Help & Contact</a></li>
         <li><a class="acc-logout" onclick="doLogout()">Logout</a></li>
       </ul>
     </div>
     <div class="acc-main">
-      <div class="acc-panel active" id="panel-profile">
+      <div class="acc-panel active" id="panel-overview">
+        <div class="acc-heading-row"><div><div class="sec-label">Customer dashboard</div><h2 class="acc-sec-title">Welcome back, <span id="overviewName">—</span></h2><p class="section-note">Manage your account, orders and wishlist from one place.</p></div><button class="nav-btn solid" onclick="showAccPanel('profile',document.querySelector('[data-panel=profile]'))">Edit Profile</button></div>
+        <div class="acc-stat-grid">
+          <div class="acc-stat"><span>Orders</span><strong id="statOrders">0</strong></div>
+          <div class="acc-stat"><span>In progress</span><strong id="statProgress">0</strong></div>
+          <div class="acc-stat"><span>Delivered</span><strong id="statDelivered">0</strong></div>
+          <div class="acc-stat"><span>Wishlist</span><strong id="statWishlist">0</strong></div>
+        </div>
+        <div class="acc-content-card"><div class="acc-card-head"><h3>Recent Orders</h3><button class="text-link" onclick="showAccPanel('orders',document.querySelector('[data-panel=orders]'))">View all</button></div><div id="recentOrders"></div></div>
+        <div class="acc-quick-grid"><button onclick="showAccPanel('orders',document.querySelector('[data-panel=orders]'))">View Orders</button><button onclick="showAccPanel('wishlist',document.querySelector('[data-panel=wishlist]'))">View Wishlist</button><button onclick="location.href='products.html'">Explore Wallets</button></div>
+      </div>
+      <div class="acc-panel" id="panel-profile">
         <h2 class="acc-sec-title">Profile Information</h2>
         <div class="profile-grid">
           <div class="f-grp"><label class="f-lbl">Full Name</label><input class="f-inp" id="pfName"></div>
           <div class="f-grp"><label class="f-lbl">Phone</label><input class="f-inp" id="pfPhone"></div>
-          <div class="f-grp"><label class="f-lbl">Email</label><input class="f-inp" id="pfEmail"></div>
+          <div class="f-grp"><label class="f-lbl">Email</label><input class="f-inp" id="pfEmail" disabled></div>
           <div class="f-grp"><label class="f-lbl">Delivery Address</label><input class="f-inp" id="pfAddress"></div>
         </div>
         <button class="profile-save-btn" onclick="saveProfile()">Save Changes</button>
+      </div>
+
+      <div class="acc-panel" id="panel-address">
+        <div class="sec-label">Saved delivery details</div><h2 class="acc-sec-title">Delivery Address</h2>
+        <div class="acc-content-card"><p class="section-note">Your current profile address is used at checkout. This account currently supports one saved address.</p><div class="address-card"><strong id="addressName">—</strong><span id="addressPhone">—</span><span id="addressText">No address saved yet.</span><em>Default checkout address</em></div><button class="profile-save-btn" onclick="showAccPanel('profile',document.querySelector('[data-panel=profile]'))">Edit Address</button></div>
       </div>
 
       <div class="acc-panel" id="panel-orders">
@@ -84,6 +95,16 @@
         <h2 class="acc-sec-title">Wishlist</h2>
         <div class="wish-grid" id="wishlistGrid"></div>
       </div>
+      <div class="acc-panel" id="panel-reviews"><div class="sec-label">Your feedback</div><h2 class="acc-sec-title">My Reviews</h2><div id="myReviewsList"></div></div>
+      <div class="acc-panel" id="panel-security"><div class="sec-label">Account protection</div><h2 class="acc-sec-title">Login & Security</h2><div class="acc-content-card"><h3>Email status</h3><p class="section-note">Your login email is <strong id="securityEmail">—</strong>.</p><p id="securityStatus" class="account-status"></p><button class="profile-save-btn" onclick="sendAccountVerification()">Resend Verification Email</button></div><div class="acc-content-card"><h3>Password</h3><p class="section-note">Use Supabase's secure password-reset flow to choose a new password.</p><button class="nav-btn solid" onclick="requestAccountPasswordReset()">Send Password Reset</button></div></div>
+      <div class="acc-panel" id="panel-preferences"><div class="sec-label">Personalise your experience</div><h2 class="acc-sec-title">Preferences</h2><div class="acc-content-card"><h3>Theme</h3><p class="section-note">Choose how AA Leathers appears on this device.</p><div class="theme-options" role="group" aria-label="Theme preference"><button data-theme-choice="light" onclick="setAccountTheme('light')">☀ Light</button><button data-theme-choice="dark" onclick="setAccountTheme('dark')">◐ Dark</button><button data-theme-choice="system" onclick="setAccountTheme('system')">◌ System</button></div></div></div>
+      <div class="acc-panel" id="panel-help"><div class="sec-label">We are here to help</div><h2 class="acc-sec-title">Help & Contact</h2><div class="acc-content-card"><h3>Need help with an order?</h3><p class="section-note">Keep your Order ID ready when contacting AA Leathers about delivery or payment status.</p><a class="btn-gold" href="contact.html" style="display:inline-block;text-decoration:none">Contact Us</a></div></div>
+    </div>
+  </div>
+  <div id="orderTrackModal" class="order-track-modal" hidden role="dialog" aria-modal="true" aria-labelledby="orderTrackTitle">
+    <div class="order-track-dialog" role="document">
+      <button type="button" class="order-track-close" onclick="closeOrderTracking()" aria-label="Close order tracking">×</button>
+      <div id="orderTrackResult" class="order-track-result"></div>
     </div>
   </div>
 
@@ -113,6 +134,8 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
 <script src="js/data.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/account.js"></script>

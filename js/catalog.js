@@ -283,7 +283,7 @@ function renderPdReviews() {
   document.getElementById('submitReviewBtn').addEventListener('click', () => saveProductReview(selectedRating));
 }
 
-function saveProductReview(rating) {
+async function saveProductReview(rating) {
   const message = document.getElementById('reviewFormMessage');
   const user = AA.session();
   if (!user) {
@@ -302,25 +302,18 @@ function saveProductReview(rating) {
     message.className = 'review-form-message error';
     return;
   }
-  const reviews = AA.reviews();
-  const existingIndex = reviews.findIndex(review => review.productID === pdCurrentProduct.productID && review.customerID === user.userID);
-  const now = AA.todayISO();
-  const review = existingIndex >= 0 ? reviews[existingIndex] : {
-    reviewID: AA.uid('REV'),
-    productID: pdCurrentProduct.productID,
-    customerID: user.userID,
-    customerName: user.name,
-    createdAt: now,
-  };
-  review.rating = rating;
-  review.comment = comment;
-  review.updatedAt = now;
-  if (existingIndex >= 0) reviews[existingIndex] = review;
-  else reviews.push(review);
-  AA.saveReviews(reviews);
+  const btn = document.getElementById('submitReviewBtn');
+  btn.disabled = true;
+  const result = await AA.saveReview(pdCurrentProduct.productID, rating, comment);
+  btn.disabled = false;
+  if (result.error) {
+    message.textContent = result.error;
+    message.className = 'review-form-message error';
+    return;
+  }
   renderPdReviews();
   renderGrid();
-  toast(existingIndex >= 0 ? 'Review updated' : 'Review submitted', 'success');
+  toast(result.updated ? 'Review updated' : 'Review submitted', 'success');
 }
 
 function pdChangeQty(delta) {
@@ -356,11 +349,15 @@ function showShop() {
 document.getElementById('searchInput').addEventListener('input', renderGrid);
 document.getElementById('sortSelect').addEventListener('change', renderGrid);
 
-renderCategoryFilters();
-renderGrid();
+// Load products / categories / reviews from Supabase, then draw the page.
+document.getElementById('shopGrid').innerHTML = '<div class="center-note" style="grid-column:1/-1">Loading wallets…</div>';
+AA.init({ reviews: true }).then(() => {
+  renderCategoryFilters();
+  renderGrid();
 
-// Deep link support: products.html#AA101
-if (location.hash) {
-  const id = location.hash.slice(1);
-  if (AA.productById(id)) openDetail(id);
-}
+  // Deep link support: products.html#AA101
+  if (location.hash) {
+    const id = location.hash.slice(1);
+    if (AA.productById(id)) openDetail(id);
+  }
+});

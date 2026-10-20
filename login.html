@@ -53,6 +53,24 @@
   </div>
 </div>
 
+<div class="verification-modal" id="verificationModal" hidden role="dialog" aria-modal="true" aria-labelledby="verificationTitle">
+  <div class="verification-dialog">
+    <button type="button" class="verification-close" id="verificationClose" aria-label="Close verification message">×</button>
+    <div class="sec-label">Almost there</div>
+    <h2 id="verificationTitle">Verify your email</h2>
+    <p class="section-note">We sent a verification link to <strong id="verificationEmail"></strong>. Open it and click the link to verify your account. Supabase must confirm the verification before you can use verified-account features.</p>
+    <p class="section-note">Please verify within 24 hours. You may browse as a guest for now; this reminder is not treated as verification until Supabase confirms it.</p>
+    <div class="verification-actions">
+      <button type="button" class="f-btn" id="verificationLogin">Verify Email &amp; Login</button>
+      <button type="button" class="f-demo" id="verificationLater">Verify Later — Continue as Guest</button>
+    </div>
+    <button type="button" class="verification-resend" id="verificationResend">Resend verification email</button>
+    <div class="f-hint" id="verificationMessage" role="status"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
 <script src="js/data.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/auth.js"></script>
